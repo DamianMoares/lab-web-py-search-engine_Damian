@@ -4,74 +4,234 @@
 
 ## Objetivo
 
-Construir un motor de búsqueda semántica sobre una colección de textos usando embeddings.
+Construir un motor de búsqueda semántica sobre una colección de textos usando embeddings de OpenAI y ChromaDB para almacenar y recuperar documentos basados en similitud semántica.
 
-## Setup
+## 🚀 Inicio rápido
+
+### 1. Configuración del entorno
 
 ```bash
-# fork & clone the repository
+# Clonar el repositorio
 cd lab-web-py-search-engine
+
+# Crear entorno virtual
 python -m venv venv
+
+# Activar entorno (Windows)
+venv\Scripts\activate
+
+# Activar entorno (macOS/Linux)
 source venv/bin/activate
-pip install openai chromadb python-dotenv tiktoken
-pip freeze > requirements.txt
 ```
 
+### 2. Instalar dependencias
+
 ```bash
-# .env
-OPENAI_API_KEY=tu-clave-aqui
+pip install -r requirements.txt
 ```
+
+### 3. Configurar variables de entorno
+
+```bash
+# Copiar archivo de ejemplo
+cp .env.example .env
+
+# Editar .env con tu clave de OpenAI
+# OPENAI_API_KEY=sk-proj-xxxxx
+```
+
+Obtén tu API key en: https://platform.openai.com/api-keys
 
 ## Dataset
 
-Usa esta colección de artículos de tecnología (puedes ampliarla):
+Colección de 8 artículos sobre tecnología:
 
-```python
-articulos = [
-    {"id": "1", "titulo": "FastAPI vs Flask", "contenido": "FastAPI ofrece validación automática con Pydantic, documentación Swagger integrada y mejor rendimiento asíncrono que Flask."},
-    {"id": "2", "titulo": "React vs Vue", "contenido": "React tiene un ecosistema más grande y es mantenido por Meta. Vue tiene una curva de aprendizaje más suave y una sintaxis más intuitiva."},
-    {"id": "3", "titulo": "PostgreSQL para principiantes", "contenido": "PostgreSQL es una base de datos relacional open source con soporte para JSON, búsqueda de texto completo y extensiones como pgvector."},
-    {"id": "4", "titulo": "Introducción a los LLMs", "contenido": "Los Large Language Models son redes neuronales entrenadas para predecir la siguiente palabra. GPT-4, Claude y Gemini son ejemplos populares."},
-    {"id": "5", "titulo": "Despliegue con Docker", "contenido": "Docker permite empaquetar aplicaciones en contenedores que se ejecutan de forma consistente en cualquier entorno."},
-    {"id": "6", "titulo": "Autenticación JWT", "contenido": "JSON Web Tokens permiten transmitir información verificada entre partes. Se usan para autenticación stateless en APIs REST."},
-    {"id": "7", "titulo": "LangChain para agentes", "contenido": "LangChain simplifica la construcción de aplicaciones con LLMs, proporcionando abstracciones para cadenas, agentes y memoria."},
-    {"id": "8", "titulo": "Python vs JavaScript para IA", "contenido": "Python domina el ecosistema de IA gracias a librerías como NumPy, PyTorch y HuggingFace. JavaScript tiene opciones como TensorFlow.js pero es menos maduro."},
-]
+| ID | Título | Tema |
+|---|---|---|
+| 1 | FastAPI vs Flask | Frameworks web Python |
+| 2 | React vs Vue | Frameworks frontend |
+| 3 | PostgreSQL para principiantes | Bases de datos |
+| 4 | Introducción a los LLMs | Modelos de lenguaje |
+| 5 | Despliegue con Docker | Containerización |
+| 6 | Autenticación JWT | Seguridad |
+| 7 | LangChain para agentes | Herramientas LLM |
+| 8 | Python vs JavaScript para IA | Lenguajes de programación |
+
+## 📚 Estructura del Proyecto
+
+```
+lab-web-py-search-engine/
+├── articulos.py          # Datos de los artículos
+├── indexar.py            # Script para crear embeddings e indexar
+├── buscar.py             # Función de búsqueda semántica
+├── app.py                # API FastAPI (bonus)
+├── analisis.ipynb        # Notebook de análisis y visualización
+├── requirements.txt      # Dependencias Python
+├── .env                  # Variables de entorno (no commitear)
+├── .env.example          # Ejemplo de .env
+├── chroma_db/            # Base de datos ChromaDB (generada)
+└── README.md             # Este archivo
 ```
 
-## Parte 1: Indexación
+## 📋 Parte 1: Indexación
 
-Crea `indexar.py` que:
+### Crear embeddings e indexar artículos
 
-1. Cargue los artículos
-2. Cree embeddings para el campo `contenido` de cada uno
-3. Los almacene en ChromaDB con metadatos (titulo, id)
-4. Imprima el número de tokens procesados y el coste estimado
+```bash
+# Indexación incremental (solo nuevos artículos)
+python indexar.py
 
-## Parte 2: Búsqueda
+# Reindexar todos los artículos
+python indexar.py full
+```
 
-Crea `buscar.py` con una función `buscar(query, n_resultados=3)` que:
+**Salida esperada:**
+```
+📌 Indexando 8 artículo(s) nuevo(s) de 8 total(es)
+✓ Indexación completada
+  - Tokens procesados: 1234
+  - Coste estimado: $0.000045
+  - Total en BD: 8 artículos
+```
 
-1. Cree el embedding de la query
-2. Busque los N documentos más similares en ChromaDB
-3. Devuelva los resultados con el score de similitud
+**Características:**
+- ✅ Indexación incremental (no reindexea si existe)
+- ✅ Calcula tokens procesados
+- ✅ Estima coste de API
+- ✅ Almacena en ChromaDB con metadatos
 
-Prueba con estas queries:
+## 🔍 Parte 2: Búsqueda Semántica
+
+### Buscar documentos similares
+
+```bash
+python buscar.py
+```
+
+O en Python:
+
+```python
+from buscar import buscar
+
+# Búsqueda básica
+resultados = buscar("¿cómo hacer una API en Python?", n_resultados=3)
+
+# Mostrar resultados
+for r in resultados:
+    print(f"[{r['score']:.4f}] {r['titulo']}")
+```
+
+**Queries de prueba:**
 - "¿cómo hacer una API en Python?"
 - "diferencias entre frameworks de frontend"
 - "cómo funciona la autenticación en aplicaciones web"
 - "herramientas para trabajar con modelos de lenguaje"
 
-## Parte 3: Notebook de análisis
+**Salida esperada:**
+```
+[0.8234] FastAPI vs Flask
+[0.6123] LangChain para agentes
+[0.5891] Python vs JavaScript para IA
+```
 
-Crea `analisis.ipynb` que visualice:
+## 📊 Parte 3: Notebook de Análisis
 
-1. Las queries de prueba y sus resultados
-2. Una tabla comparativa: query → mejor resultado → score de similitud
-3. (Bonus) Un mapa de calor de similitud entre todos los artículos
+### Visualizaciones y análisis
 
-## Bonus
+```bash
+jupyter notebook analisis.ipynb
+```
 
-- Añade búsqueda por `titulo` además del `contenido`
-- Implementa un endpoint FastAPI `GET /buscar?q=` que use este motor
-- Haz que la indexación sea incremental (no reindexe si el artículo ya existe)
+**Contenidos del notebook:**
+1. 📈 Tabla comparativa: query → mejor resultado → score
+2. 📊 Gráfico de barras con scores de similitud
+3. 🔥 Mapa de calor de similitud entre artículos
+4. 📋 Tabla detallada con todos los resultados
+
+## 🎁 Funcionalidades Bonus
+
+### 1. API FastAPI
+
+```bash
+# Iniciar servidor
+uvicorn app:app --reload
+
+# Probar endpoint
+curl "http://localhost:8000/buscar?q=API%20Python&n=3"
+```
+
+**Response:**
+```json
+{
+  "query": "API Python",
+  "resultados": [
+    {
+      "id": "1",
+      "titulo": "FastAPI vs Flask",
+      "documento": "...",
+      "score": 0.8234
+    }
+  ]
+}
+```
+
+### 2. Búsqueda por múltiples campos
+
+```python
+from buscar import buscar
+
+# Buscar en contenido
+resultados = buscar("Docker", buscar_en="contenido")
+
+# Búsqueda futura en títulos
+resultados = buscar("vs", buscar_en="titulo")
+```
+
+### 3. Indexación incremental
+
+```python
+from indexar import main
+
+# Solo indexa nuevos artículos
+main(modo="incremental")
+
+# Reindexar todo
+main(modo="full")
+```
+
+## 🔧 Tecnologías
+
+| Herramienta | Propósito |
+|---|---|
+| **OpenAI** | Embeddings con text-embedding-3-small |
+| **ChromaDB** | Base de datos vectorial persistente |
+| **Python-dotenv** | Gestión de variables de entorno |
+| **Tiktoken** | Contador de tokens |
+| **FastAPI** | API REST (bonus) |
+| **Pandas & Matplotlib** | Análisis y visualización |
+
+## 📈 Ejemplo de Uso Completo
+
+```bash
+# 1. Activar entorno
+source venv/bin/activate
+
+# 2. Indexar artículos (primera vez)
+python indexar.py
+
+# 3. Hacer búsquedas
+python buscar.py
+
+# 4. Análisis en Jupyter
+jupyter notebook analisis.ipynb
+
+# 5. (Opcional) Iniciar API
+uvicorn app:app --reload
+```
+
+## 📝 Notas
+
+- **ChromaDB**: Se almacena en el directorio `chroma_db/`
+- **Costes**: El modelo `text-embedding-3-small` cuesta $0.02 por 1M tokens
+- **Límites**: API de OpenAI tiene límites de rate
+- **Privacidad**: Nunca commitees tu `.env` con la API key
